@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS ORDERS (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_username VARCHAR(100) NOT NULL,
+    total_price DECIMAL(15,2) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ORDER_ITEMS (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    coffee_id BIGINT NOT NULL,
+    coffee_name VARCHAR(200) NOT NULL,
+    unit_price DECIMAL(15,2) NOT NULL,
+    quantity INT NOT NULL,
+    line_total DECIMAL(15,2) NOT NULL,
+    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES ORDERS(id) ON DELETE CASCADE
+);

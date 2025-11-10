@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth-service/sb3_msa3.auth-service.iml" filepath="$PROJECT_DIR$/.idea/modules/auth-service/sb3_msa3.auth-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth-service/sb3_msa3.auth-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/auth-service/sb3_msa3.auth-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth-service/sb3_msa3.auth-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/auth-service/sb3_msa3.auth-service.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/customer-service/sb3_msa3.customer-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/customer-service/sb3_msa3.customer-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/eureka-server/sb3_msa3.eureka-server.main.iml" filepath="$PROJECT_DIR$/.idea/modules/eureka-server/sb3_msa3.eureka-server.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gateway-service/sb3_msa3.gateway-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/gateway-service/sb3_msa3.gateway-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/order-service/sb3_msa3.order-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/order-service/sb3_msa3.order-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/post-service/sb3_msa3.post-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/post-service/sb3_msa3.post-service.main.iml" />
+    </modules>
+  </component>
+</project>

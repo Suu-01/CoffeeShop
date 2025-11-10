@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>게시글 상세보기</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .container { max-width: 800px; margin: auto; }
+        h1 { color: #333; }
+        .meta { color: gray; font-size: 0.9em; margin-bottom: 20px; }
+        textarea, input { width: 100%; margin-top: 10px; }
+        button { margin: 5px; padding: 6px 12px; }
+        .btn-group { margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 id="title">제목</h1>
+    <div class="meta">
+        작성자: <span id="author"></span> | 작성일: <span id="createdAt"></span>
+    </div>
+    <div id="content" style="white-space: pre-wrap; border: 1px solid #ddd; padding: 15px;"></div>
+
+    <div class="btn-group">
+        <button onclick="showEdit()">✏️ 수정</button>
+        <button onclick="deletePost()">🗑️ 삭제</button>
+        <a href="/posts" class="button-link">📋 목록으로</a>
+    </div>
+
+    <!-- 수정 폼 -->
+    <div id="editForm" style="display:none; margin-top:20px;">
+        <input type="text" id="editTitle" placeholder="제목">
+        <input type="text" id="editAuthor" placeholder="작성자">
+        <textarea id="editContent" rows="6"></textarea>
+        <button onclick="saveEdit()">💾 저장</button>
+        <button onclick="cancelEdit()">취소</button>
+    </div>
+</div>
+
+<script>
+    const id = window.location.pathname.split("/").pop();
+
+    async function loadPost() {
+        const res = await fetch(`/api/posts/${id}`);
+        const post = await res.json();
+
+        document.getElementById('title').innerText = post.title;
+        document.getElementById('author').innerText = post.author;
+        document.getElementById('createdAt').innerText = post.createdAt ? post.createdAt.replace('T', ' ') : '';
+        document.getElementById('content').innerText = post.content;
+
+        document.getElementById('editTitle').value = post.title;
+        document.getElementById('editAuthor').value = post.author;
+        document.getElementById('editContent').value = post.content;
+    }
+
+    function goBack() {
+        window.location.href = "/";
+    }
+
+    function showEdit() {
+        document.getElementById('editForm').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('editForm').style.display = 'none';
+    }
+
+    async function saveEdit() {
+        const title = document.getElementById('editTitle').value;
+        const author = document.getElementById('editAuthor').value;
+        const content = document.getElementById('editContent').value;
+
+        const res = await fetch(`/api/posts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, author, content })
+        });
+
+        if (res.ok) {
+            alert("수정 완료!");
+            document.getElementById('editForm').style.display = 'none';
+            loadPost();
+        } else {
+            alert("수정 실패!");
+        }
+    }
+
+    async function deletePost() {
+        if (!confirm("삭제하시겠습니까?")) return;
+        const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert("삭제 완료!");
+            goBack();
+        } else {
+            alert("삭제 실패!");
+        }
+    }
+
+    loadPost();
+</script>
+</body>
+</html>

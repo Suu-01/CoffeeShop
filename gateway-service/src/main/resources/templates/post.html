@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>블로그 게시판</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, textarea { width: 100%; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background: #f5f5f5; }
+        button { padding: 5px 10px; margin: 2px; }
+        h1 { color: #444; }
+        a { text-decoration: none; color: #007bff; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<nav style="padding:10px; background:#f5f5f5; margin-bottom:20px;">
+    <a href="/" style="margin-right:10px;">🏠 홈</a>
+    <a href="/posts" style="margin-right:10px;">📝 게시글</a>
+    <a href="/categorys">📂 카테고리</a>
+    <span style="float:right; color:#666;">Gateway</span>
+    </nav>
+<h1>📝 블로그 게시판</h1>
+
+<!-- 게시글 작성 -->
+<div>
+    <h3>게시글 작성</h3>
+    <input type="hidden" id="postId">
+    <input type="text" id="title" placeholder="제목">
+    <input type="text" id="author" placeholder="작성자">
+    <select id="categoryId">
+        <option value="">카테고리 선택(선택사항)</option>
+    </select>
+    <textarea id="content" rows="5" placeholder="내용"></textarea>
+    <button onclick="savePost()">저장</button>
+    <button onclick="clearForm()">취소</button>
+</div>
+
+<!-- 게시글 목록 -->
+<table>
+    <thead>
+    <tr>
+        <th>ID</th><th>제목</th><th>작성자</th><th>카테고리</th><th>작성일</th><th>관리</th>
+    </tr>
+    </thead>
+    <tbody id="postList"></tbody>
+</table>
+
+<script>
+    // 카테고리 캐시 및 표시 함수
+    let categoryCache = [];
+
+    function renderCategoryName(categoryId) {
+        if (!categoryId) return '';
+        const c = categoryCache.find(x => x.id === categoryId);
+        return c ? c.name : '';
+    }
+
+    // 게시글 목록 로드
+    async function loadPosts() {
+        const res = await fetch('/api/posts');
+        const posts = await res.json();
+        const tbody = document.getElementById('postList');
+        tbody.innerHTML = posts.map(p => `
+        <tr>
+            <td>${p.id}</td>
+            <td><a href="/posts/${p.id}">${p.title}</a></td>
+            <td>${p.author}</td>
+            <td>${renderCategoryName(p.categoryId)}</td>
+            <td>${p.createdAt ? p.createdAt.replace('T', ' ') : ''}</td>
+            <td>
+                <button onclick="editPost(${p.id})">수정</button>
+                <button onclick="deletePost(${p.id})">삭제</button>
+            </td>
+        </tr>
+    `).join('');
+    }
+
+    // 카테고리 목록 로드
+    async function loadCategoryOptions(selectedId) {
+        try {
+            const res = await fetch('/api/categorys');
+            const categories = await res.json();
+            categoryCache = categories;
+            const select = document.getElementById('categoryId');
+            select.innerHTML = '<option value="">카테고리 선택(선택사항)</option>' +
+                categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (selectedId !== undefined && selectedId !== null) {
+                select.value = selectedId ?? '';
+            }
+        } catch (e) {
+            console.error('카테고리 목록 로드 실패', e);
+        }
+    }
+
+    // 게시글 저장 (신규/수정)
+    async function savePost() {
+        const id = document.getElementById('postId').value;
+        const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
+        const content = document.getElementById('content').value;
+        const categoryIdValue = document.getElementById('categoryId').value;
+        const categoryId = categoryIdValue === '' ? null : Number(categoryIdValue);
+
+        if (!title.trim() || !author.trim() || !content.trim()) {
+            alert('모든 항목을 입력해주세요!');
+            return;
+        }
+
+        const post = { title, author, content, categoryId };
+
+        const res = await fetch(id ? `/api/posts/${id}` : '/api/posts', {
+            method: id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(post)
+        });
+
+        if (res.ok) {
+            alert('저장 완료!');
+            clearForm();
+            loadPosts();
+        } else {
+            const msg = await res.text();
+            alert('저장 실패: ' + msg);
+        }
+    }
+
+    // 게시글 수정 버튼 클릭 시 기존 데이터 채우기
+    async function editPost(id) {
+        const res = await fetch(`/api/posts/${id}`);
+        const post = await res.json();
+        document.getElementById('postId').value = post.id;
+        document.getElementById('title').value = post.title;
+        document.getElementById('author').value = post.author;
+        document.getElementById('content').value = post.content;
+        await loadCategoryOptions(post.categoryId ?? '');
+        window.scrollTo(0, 0);
+    }
+
+    // 게시글 삭제
+    async function deletePost(id) {
+        if (!confirm('삭제하시겠습니까?')) return;
+        await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+        loadPosts();
+    }
+
+    // 폼 초기화
+    function clearForm() {
+        document.getElementById('postId').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('author').value = '';
+        document.getElementById('content').value = '';
+        loadCategoryOptions('');
+    }
+
+    loadPosts();
+    loadCategoryOptions('');
+</script>
+</body>
+</html>
