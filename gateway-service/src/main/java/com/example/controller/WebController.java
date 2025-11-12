@@ -23,7 +23,7 @@ public class WebController {
     @GetMapping("/register")
     public String register(Model model) {
         model.addAttribute("message", "회원 가입");
-        return "register";
+        return "signup";
     }
 
     @GetMapping("/posts")
@@ -36,6 +36,12 @@ public class WebController {
     public String postDetail(@PathVariable String id, Model model) {
         model.addAttribute("message", "게시글 상세");
         return "detail";
+    }
+
+    @GetMapping("/menus")
+    public String menus(Model model) {
+        model.addAttribute("message", "메뉴");
+        return "menus";
     }
 
     @GetMapping("/orders")

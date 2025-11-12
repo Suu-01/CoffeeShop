@@ -6,6 +6,7 @@ import com.example.product.repository.OrderRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -18,13 +19,11 @@ public class OrderController {
         this.orderRepository = orderRepository;
     }
 
-    // 모든 주문 목록을 조회하는 API
     @GetMapping
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // 특정 주문 ID로 주문을 조회하는 API
     @GetMapping("/{id}")
     public ResponseEntity<Order> getOrderById(@PathVariable Long id) {
         return orderRepository.findById(id)
@@ -32,20 +31,24 @@ public class OrderController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 새로운 주문을 생성하는 API
     @PostMapping
     public ResponseEntity<Order> createOrder(@RequestBody Order order) {
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
                 item.setOrder(order);
+                // lineTotal 명시적으로 계산
+                if (item.getUnitPrice() != null && item.getQuantity() != null) {
+                    item.setLineTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+                }
             }
             order.recalculateTotal();
         }
         Order saved = orderRepository.save(order);
-        return ResponseEntity.ok(saved);
+        // 저장 후 다시 한 번 총액 계산 (PrePersist/PreUpdate 트리거 확인)
+        saved.recalculateTotal();
+        return ResponseEntity.ok(orderRepository.save(saved));
     }
 
-    // 기존 주문을 전체 수정(덮어쓰기)하는 API
     @PutMapping("/{id}")
     public ResponseEntity<Order> updateOrder(@PathVariable Long id, @RequestBody Order incoming) {
         return orderRepository.findById(id)
@@ -54,18 +57,24 @@ public class OrderController {
                     if (incoming.getItems() != null) {
                         for (OrderItem item : incoming.getItems()) {
                             item.setOrder(existing);
+                            // lineTotal 명시적으로 계산
+                            if (item.getUnitPrice() != null && item.getQuantity() != null) {
+                                item.setLineTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+                            }
                             existing.getItems().add(item);
                         }
                     }
                     existing.setCustomerUsername(incoming.getCustomerUsername());
                     existing.setStatus(incoming.getStatus());
                     existing.recalculateTotal();
-                    return ResponseEntity.ok(orderRepository.save(existing));
+                    Order saved = orderRepository.save(existing);
+                    // 저장 후 다시 한 번 총액 계산
+                    saved.recalculateTotal();
+                    return ResponseEntity.ok(orderRepository.save(saved));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 주문의 상태만 부분 수정하는 API
     @PatchMapping("/{id}/status")
     public ResponseEntity<Order> updateStatus(@PathVariable Long id, @RequestBody StatusPatch patch) {
         return orderRepository.findById(id)
@@ -76,7 +85,6 @@ public class OrderController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 특정 주문을 삭제하는 API
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
         return orderRepository.findById(id)
@@ -87,7 +95,6 @@ public class OrderController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // PATCH 요청 본문에서 status 값을 받기 위한 DTO(간단한 내부 클래스)
     public static class StatusPatch {
         public String status;
     }

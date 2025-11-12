@@ -93,7 +93,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/??">커피메뉴</a>
+                        <a class="nav-link" href="/menus">커피메뉴</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/orders">주문하기</a>
@@ -125,7 +125,7 @@
             <p class="lead"></p>
         </div>
         <div class="menu-buttons">
-            <a href="/??" class="menu-button">
+            <a href="/menus" class="menu-button">
                 <i class="bi bi-cup-hot"></i>
                 <span>커피메뉴</span>
             </a>
@@ -152,7 +152,7 @@
                 document.getElementById('loginNav').classList.add('d-none');
                 document.getElementById('userNav').classList.remove('d-none');
                 document.getElementById('logoutNav').classList.remove('d-none');
-                document.getElementById('username').textContent = `${username} (${role})`;
+                document.getElementById('username').textContent = username;
             } else {
                 document.getElementById('loginNav').classList.remove('d-none');
                 document.getElementById('userNav').classList.add('d-none');
@@ -173,4 +173,4 @@
         document.addEventListener('DOMContentLoaded', checkLoginStatus);
     </script>
 </body>
-</html> 
+</html>

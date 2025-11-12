@@ -92,6 +92,49 @@
             margin-bottom: 20px;
             color: #ccc;
         }
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        .menu-item-info {
+            flex: 1;
+        }
+        .menu-item-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .menu-item-price {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .menu-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+        }
+        .cart-summary {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -104,7 +147,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/??">메뉴보기</a>
+                        <a class="nav-link" href="/menus">메뉴보기</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/????">리뷰쓰기</a>
@@ -146,17 +189,26 @@
 
     <!-- 주문하기 모달 -->
     <div class="modal fade" id="orderModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">주문하기</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>주문 기능은 추후 구현 예정입니다.</p>
+                    <div id="menuList">
+                        <p>메뉴를 불러오는 중...</p>
+                    </div>
+                    <div class="cart-summary" id="cartSummary" style="display: none;">
+                        <div class="cart-total">
+                            <span>총 주문 금액:</span>
+                            <span id="totalAmount">0원</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" onclick="submitOrder()">주문하기</button>
                 </div>
             </div>
         </div>
@@ -164,17 +216,26 @@
 
     <!-- 주문 수정 모달 -->
     <div class="modal fade" id="editOrderModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">주문 수정</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>주문 수정 기능은 추후 구현 예정입니다.</p>
+                    <div id="editMenuList">
+                        <p>주문 정보를 불러오는 중...</p>
+                    </div>
+                    <div class="cart-summary" id="editCartSummary" style="display: none;">
+                        <div class="cart-total">
+                            <span>총 주문 금액:</span>
+                            <span id="editTotalAmount">0원</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" onclick="submitOrderUpdate()">수정하기</button>
                 </div>
             </div>
         </div>
@@ -192,7 +253,7 @@
                 document.getElementById('loginNav').classList.add('d-none');
                 document.getElementById('userNav').classList.remove('d-none');
                 document.getElementById('logoutNav').classList.remove('d-none');
-                document.getElementById('username').textContent = `${username} (${role})`;
+                document.getElementById('username').textContent = username;
             } else {
                 document.getElementById('loginNav').classList.remove('d-none');
                 document.getElementById('userNav').classList.add('d-none');
@@ -213,12 +274,17 @@
         async function loadOrders() {
             try {
                 const response = await fetch('/api/orders');
-                if (!response.ok) throw new Error('주문 목록을 불러올 수 없습니다.');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('주문 목록 로드 실패:', response.status, errorText);
+                    throw new Error(`주문 목록을 불러올 수 없습니다. (${response.status})`);
+                }
 
                 const orders = await response.json();
+                console.log('주문 목록:', orders);
                 const orderList = document.getElementById('orderList');
 
-                if (orders.length === 0) {
+                if (!orders || orders.length === 0) {
                     orderList.innerHTML = `
                         <div class="empty-orders">
                             <i class="bi bi-cart-x"></i>
@@ -229,6 +295,7 @@
                 }
 
                 orderList.innerHTML = orders.map(order => {
+                    console.log('주문 처리:', order);
                     // 메뉴 이름들을 쉼표로 연결
                     const menuNames = order.items && order.items.length > 0
                         ? order.items.map(item => `${item.coffeeName} (${item.quantity}개)`).join(', ')
@@ -236,11 +303,11 @@
 
                     // 총 개수 계산
                     const totalQuantity = order.items && order.items.length > 0
-                        ? order.items.reduce((sum, item) => sum + item.quantity, 0)
+                        ? order.items.reduce((sum, item) => sum + (item.quantity || 0), 0)
                         : 0;
 
                     // 총 가격
-                    const totalPrice = order.totalPrice ? order.totalPrice.toLocaleString() : '0';
+                    const totalPrice = order.totalPrice ? parseFloat(order.totalPrice).toLocaleString() : '0';
 
                     return `
                         <div class="order-card">
@@ -266,22 +333,352 @@
                     <div class="empty-orders">
                         <i class="bi bi-exclamation-triangle"></i>
                         <p>주문 목록을 불러올 수 없습니다.</p>
+                        <p style="font-size: 0.9em; color: #999;">${error.message}</p>
                     </div>
                 `;
             }
         }
 
+        let selectedMenus = {}; // {menuId: {menu, quantity}}
+        let allMenus = []; // 전체 메뉴 목록
+        let editingOrderId = null; // 수정 중인 주문 ID
+        let editSelectedMenus = {}; // 수정 모달의 선택된 메뉴
+
         // 주문하기 모달 표시
-        function showOrderModal() {
+        async function showOrderModal() {
+            selectedMenus = {};
             const modal = new bootstrap.Modal(document.getElementById('orderModal'));
             modal.show();
+            await loadMenus();
+        }
+
+        // 메뉴 목록 로드
+        async function loadMenus() {
+            try {
+                const response = await fetch('/api/menus');
+                if (!response.ok) throw new Error('메뉴 목록을 불러올 수 없습니다.');
+
+                allMenus = await response.json();
+                const menuList = document.getElementById('menuList');
+
+                if (allMenus.length === 0) {
+                    menuList.innerHTML = '<p>등록된 메뉴가 없습니다.</p>';
+                    return;
+                }
+
+                menuList.innerHTML = allMenus.map(menu => `
+                    <div class="menu-item">
+                        <div class="menu-item-info">
+                            <div class="menu-item-name">${menu.name}</div>
+                            <div class="menu-item-price">${menu.price.toLocaleString()}원</div>
+                        </div>
+                        <div class="menu-item-quantity">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="decreaseQuantity(${menu.id})">-</button>
+                            <input type="number" class="form-control quantity-input" id="qty-${menu.id}"
+                                   value="0" min="0" onchange="updateQuantity(${menu.id}, this.value)">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="increaseQuantity(${menu.id})">+</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                updateCartSummary();
+            } catch (error) {
+                console.error('Error loading menus:', error);
+                document.getElementById('menuList').innerHTML = '<p>메뉴를 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 수량 증가
+        function increaseQuantity(menuId) {
+            const input = document.getElementById(`qty-${menuId}`);
+            const currentValue = parseInt(input.value) || 0;
+            input.value = currentValue + 1;
+            updateQuantity(menuId, input.value);
+        }
+
+        // 수량 감소
+        function decreaseQuantity(menuId) {
+            const input = document.getElementById(`qty-${menuId}`);
+            const currentValue = parseInt(input.value) || 0;
+            if (currentValue > 0) {
+                input.value = currentValue - 1;
+                updateQuantity(menuId, input.value);
+            }
+        }
+
+        // 수량 업데이트
+        function updateQuantity(menuId, quantity) {
+            const qty = parseInt(quantity) || 0;
+            const menu = allMenus.find(m => m.id === menuId);
+
+            if (qty > 0 && menu) {
+                selectedMenus[menuId] = {
+                    menu: menu,
+                    quantity: qty
+                };
+            } else {
+                delete selectedMenus[menuId];
+            }
+            updateCartSummary();
+        }
+
+        // 장바구니 요약 업데이트
+        function updateCartSummary() {
+            const cartSummary = document.getElementById('cartSummary');
+            const totalAmount = Object.values(selectedMenus).reduce((sum, item) => {
+                return sum + (parseFloat(item.menu.price) * item.quantity);
+            }, 0);
+
+            if (totalAmount > 0) {
+                cartSummary.style.display = 'block';
+                document.getElementById('totalAmount').textContent = totalAmount.toLocaleString() + '원';
+            } else {
+                cartSummary.style.display = 'none';
+            }
+        }
+
+        // 주문 제출
+        async function submitOrder() {
+            const username = localStorage.getItem('username');
+            if (!username) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+
+            const orderItems = Object.values(selectedMenus).map(item => ({
+                coffeeId: item.menu.id,
+                coffeeName: item.menu.name,
+                unitPrice: item.menu.price,
+                quantity: item.quantity
+            }));
+
+            if (orderItems.length === 0) {
+                alert('주문할 메뉴를 선택해주세요.');
+                return;
+            }
+
+            const order = {
+                customerUsername: username,
+                items: orderItems,
+                status: 'CREATED'
+            };
+
+            console.log('주문 제출:', order);
+
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(order)
+                });
+
+                if (response.ok) {
+                    const savedOrder = await response.json();
+                    console.log('주문 저장 완료:', savedOrder);
+                    alert('주문이 완료되었습니다.');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+                    modal.hide();
+                    loadOrders();
+                } else {
+                    const error = await response.text();
+                    console.error('주문 제출 실패:', response.status, error);
+                    alert('주문에 실패했습니다: ' + error);
+                }
+            } catch (error) {
+                console.error('Error submitting order:', error);
+                alert('주문 중 오류가 발생했습니다: ' + error.message);
+            }
         }
 
         // 주문 수정
-        function editOrder(orderId) {
-            const modal = new bootstrap.Modal(document.getElementById('editOrderModal'));
-            modal.show();
-            // TODO: 주문 수정 로직 구현
+        async function editOrder(orderId) {
+            editingOrderId = orderId;
+            editSelectedMenus = {};
+
+            try {
+                // 주문 정보 가져오기
+                const response = await fetch(`/api/orders/${orderId}`);
+                if (!response.ok) {
+                    alert('주문 정보를 불러올 수 없습니다.');
+                    return;
+                }
+
+                const order = await response.json();
+
+                // 메뉴 목록 가져오기
+                const menusResponse = await fetch('/api/menus');
+                if (!menusResponse.ok) {
+                    alert('메뉴 목록을 불러올 수 없습니다.');
+                    return;
+                }
+
+                allMenus = await menusResponse.json();
+
+                // 기존 주문 항목을 editSelectedMenus에 추가
+                if (order.items && order.items.length > 0) {
+                    order.items.forEach(item => {
+                        const menu = allMenus.find(m => m.id === item.coffeeId);
+                        if (menu) {
+                            editSelectedMenus[item.coffeeId] = {
+                                menu: menu,
+                                quantity: item.quantity
+                            };
+                        }
+                    });
+                }
+
+                // 모달에 메뉴 목록 표시
+                renderEditMenuList();
+                updateEditCartSummary();
+
+                const modal = new bootstrap.Modal(document.getElementById('editOrderModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Error loading order for edit:', error);
+                alert('주문 정보를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 수정 모달에 메뉴 목록 렌더링
+        function renderEditMenuList() {
+            const editMenuList = document.getElementById('editMenuList');
+
+            if (allMenus.length === 0) {
+                editMenuList.innerHTML = '<p>등록된 메뉴가 없습니다.</p>';
+                return;
+            }
+
+            editMenuList.innerHTML = allMenus.map(menu => {
+                const selected = editSelectedMenus[menu.id];
+                const quantity = selected ? selected.quantity : 0;
+
+                return `
+                    <div class="menu-item">
+                        <div class="menu-item-info">
+                            <div class="menu-item-name">${menu.name}</div>
+                            <div class="menu-item-price">${menu.price.toLocaleString()}원</div>
+                        </div>
+                        <div class="menu-item-quantity">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editDecreaseQuantity(${menu.id})">-</button>
+                            <input type="number" class="form-control quantity-input" id="edit-qty-${menu.id}"
+                                   value="${quantity}" min="0" onchange="editUpdateQuantity(${menu.id}, this.value)">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editIncreaseQuantity(${menu.id})">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 수정 모달 수량 증가
+        function editIncreaseQuantity(menuId) {
+            const input = document.getElementById(`edit-qty-${menuId}`);
+            const currentValue = parseInt(input.value) || 0;
+            input.value = currentValue + 1;
+            editUpdateQuantity(menuId, input.value);
+        }
+
+        // 수정 모달 수량 감소
+        function editDecreaseQuantity(menuId) {
+            const input = document.getElementById(`edit-qty-${menuId}`);
+            const currentValue = parseInt(input.value) || 0;
+            if (currentValue > 0) {
+                input.value = currentValue - 1;
+                editUpdateQuantity(menuId, input.value);
+            }
+        }
+
+        // 수정 모달 수량 업데이트
+        function editUpdateQuantity(menuId, quantity) {
+            const qty = parseInt(quantity) || 0;
+            const menu = allMenus.find(m => m.id === menuId);
+
+            if (qty > 0 && menu) {
+                editSelectedMenus[menuId] = {
+                    menu: menu,
+                    quantity: qty
+                };
+            } else {
+                delete editSelectedMenus[menuId];
+            }
+            updateEditCartSummary();
+        }
+
+        // 수정 모달 장바구니 요약 업데이트
+        function updateEditCartSummary() {
+            const cartSummary = document.getElementById('editCartSummary');
+            const totalAmount = Object.values(editSelectedMenus).reduce((sum, item) => {
+                return sum + (parseFloat(item.menu.price) * item.quantity);
+            }, 0);
+
+            if (totalAmount > 0) {
+                cartSummary.style.display = 'block';
+                document.getElementById('editTotalAmount').textContent = totalAmount.toLocaleString() + '원';
+            } else {
+                cartSummary.style.display = 'none';
+            }
+        }
+
+        // 주문 수정 제출
+        async function submitOrderUpdate() {
+            if (!editingOrderId) {
+                alert('수정할 주문이 없습니다.');
+                return;
+            }
+
+            const username = localStorage.getItem('username');
+            if (!username) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const orderItems = Object.values(editSelectedMenus).map(item => ({
+                coffeeId: item.menu.id,
+                coffeeName: item.menu.name,
+                unitPrice: item.menu.price,
+                quantity: item.quantity
+            }));
+
+            if (orderItems.length === 0) {
+                alert('최소 하나 이상의 메뉴를 선택해주세요.');
+                return;
+            }
+
+            const order = {
+                customerUsername: username,
+                items: orderItems,
+                status: 'CREATED'
+            };
+
+            console.log('주문 수정 제출:', order);
+
+            try {
+                const response = await fetch(`/api/orders/${editingOrderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(order)
+                });
+
+                if (response.ok) {
+                    const savedOrder = await response.json();
+                    console.log('주문 수정 완료:', savedOrder);
+                    alert('주문이 수정되었습니다.');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editOrderModal'));
+                    modal.hide();
+                    loadOrders();
+                } else {
+                    const error = await response.text();
+                    console.error('주문 수정 실패:', response.status, error);
+                    alert('주문 수정에 실패했습니다: ' + error);
+                }
+            } catch (error) {
+                console.error('Error updating order:', error);
+                alert('주문 수정 중 오류가 발생했습니다: ' + error.message);
+            }
         }
 
         // 주문 취소

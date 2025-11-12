@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS cafe_menus (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    description VARCHAR(500),
+    price DECIMAL(15,2) NOT NULL
+    );
