@@ -50,6 +50,12 @@ public class WebController {
         return "orders";
     }
 
+    @GetMapping("/reviews")
+    public String reviews(Model model) {
+        model.addAttribute("Message", "리뷰");
+        return "reviews";
+    }
+
     @GetMapping("/admin")
     public String admin(Model model) {
         model.addAttribute("message", "관리자 페이지");

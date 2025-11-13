@@ -13,7 +13,7 @@
         <module name="com.example.sb3_msa3.auth-service.main" />
         <module name="sb3_msa3.customer-service.main" />
         <module name="sb3_msa3.gateway-service.main" />
-        <module name="sb3_msa3.post-service.main" />
+        <module name="sb3_msa3.review-service.main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="17" />

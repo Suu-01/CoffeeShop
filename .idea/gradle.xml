@@ -16,7 +16,7 @@
             <option value="$PROJECT_DIR$/gateway-service" />
             <option value="$PROJECT_DIR$/menu-service" />
             <option value="$PROJECT_DIR$/order-service" />
-            <option value="$PROJECT_DIR$/post-service" />
+            <option value="$PROJECT_DIR$/review-service" />
           </set>
         </option>
       </GradleProjectSettings>

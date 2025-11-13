@@ -64,13 +64,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/menus">커피메뉴</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="/orders">주문하기</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/????">리뷰쓰기</a>
+                        <a class="nav-link" href="/reviews">리뷰쓰기</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav" id="authNav">
@@ -202,7 +199,7 @@
             try {
                 const response = await fetch('/api/menus');
                 if (!response.ok) throw new Error('메뉴를 불러올 수 없습니다.');
-                
+
                 menuList = await response.json();
 
                 const tbody = document.getElementById('menuTableBody');
@@ -233,7 +230,7 @@
                 });
             } catch (error) {
                 console.error('메뉴를 불러오는데 실패했습니다:', error);
-                document.getElementById('menuTableBody').innerHTML = 
+                document.getElementById('menuTableBody').innerHTML =
                     '<tr><td colspan="5" class="text-center text-danger">메뉴를 불러오는데 실패했습니다.</td></tr>';
             }
         }
