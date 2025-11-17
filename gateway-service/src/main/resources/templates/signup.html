@@ -4,70 +4,135 @@
     <meta charset="UTF-8">
     <title>회원 가입</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         body {
             background-color: #F5E6D3;
             min-height: 100vh;
         }
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+
+        /* 네비게이션 바 스타일 */
+        .navbar {
+            background-color: #D4C5A9 !important;
         }
-        .register-container {
-            max-width: 400px;
-            margin: 100px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        .navbar-brand {
+            font-weight: bold;
         }
-        .register-title {
+        .nav-link {
+            color: #333;
+        }
+        .nav-link:hover {
+            color: #0d6efd;
+        }
+
+        /* 회원가입 박스 스타일 (로그인과 동일) */
+        .login-container {
+            max-width: 420px;
+            margin: 120px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .login-title {
             text-align: center;
             margin-bottom: 30px;
             color: #333;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .form-control {
+            border-radius: 10px;
         }
         .form-control:focus {
             box-shadow: none;
             border-color: #0d6efd;
         }
-        .btn-register {
+
+        .btn-login {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
+            background-color: #D4C5A9;
+            border: none;
+            color: #333;
+            font-weight: bold;
+            border-radius: 10px;
+            transition: 0.3s;
         }
+        .btn-login:hover {
+            background-color: #c3b696;
+            color: #000;
+        }
+
         .login-link {
             text-align: center;
             margin-top: 20px;
         }
+        .login-link a {
+            color: #333;
+            font-weight: 500;
+        }
+        .login-link a:hover {
+            color: #0d6efd;
+        }
     </style>
 </head>
+
 <body>
-    <button class="btn btn-outline-secondary back-button" onclick="location.href='/'">
-        <i class="bi bi-arrow-left"></i> 홈으로
-    </button>
+
+<!-- ⭐ 네비게이션 바 (로그인 페이지와 동일) -->
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">네코드의 커피전문점</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" href="/menus">메뉴보기</a></li>
+                <li class="nav-item"><a class="nav-link" href="/orders">주문하기</a></li>
+                <li class="nav-item"><a class="nav-link" href="/reviews">리뷰쓰기</a></li>
+            </ul>
+
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="/login">로그인</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ⭐ 회원가입 컨테이너 -->
 <div class="container">
-    <div class="register-container">
-        <h2 class="register-title">회원 가입</h2>
+    <div class="login-container">
+        <h2 class="login-title">회원 가입</h2>
+
         <form id="registerForm">
             <div class="mb-3">
-                <label for="username" class="form-label">사용자명</label>
-                <input type="text" class="form-control" id="username" name="username" required>
+                <label class="form-label">사용자명</label>
+                <input type="text" class="form-control" id="username" required>
             </div>
+
             <div class="mb-3">
-                <label for="password" class="form-label">비밀번호</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <label class="form-label">비밀번호</label>
+                <input type="password" class="form-control" id="password" required>
             </div>
+
             <div class="mb-3">
-                <label for="confirmPassword" class="form-label">비밀번호 확인</label>
-                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                <label class="form-label">비밀번호 확인</label>
+                <input type="password" class="form-control" id="confirmPassword" required>
             </div>
+
             <div class="mb-3">
-                <label for="email" class="form-label">이메일</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+                <label class="form-label">이메일</label>
+                <input type="email" class="form-control" id="email" required>
             </div>
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-register">회원 가입</button>
-            </div>
+
+            <button type="submit" class="btn-login">회원 가입</button>
+
             <div class="login-link">
                 <a href="/login">이미 계정이 있으신가요? 로그인</a>
             </div>
@@ -88,9 +153,7 @@
         try {
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password, confirmPassword, email })
             });
 
@@ -99,13 +162,14 @@
                 window.location.href = '/login';
             } else {
                 const error = await response.text();
-                alert('회원 가입에 실패했습니다: ' + error);
+                alert('회원 가입 실패: ' + error);
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error(error);
             alert('회원 가입 중 오류가 발생했습니다.');
         }
     });
 </script>
+
 </body>
 </html>
