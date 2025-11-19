@@ -13,7 +13,11 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
 
     public List<Review> getReviews(Long menuId) {
-        return reviewRepository.findByMenuIdOrderByCreatedAtDesc(menuId);
+        // 이미지만 저장한 리뷰(content가 비어있는 것)는 제외
+        return reviewRepository.findByMenuIdOrderByCreatedAtDesc(menuId)
+                .stream()
+                .filter(r -> r.getContent() != null && !r.getContent().trim().isEmpty())
+                .toList();
     }
 
     public Review addReview(Long menuId, String content, int rating) {
@@ -42,6 +46,10 @@ public class ReviewService {
     }
 
     public long getReviewCount(Long menuId) {
-        return reviewRepository.countByMenuId(menuId);
+        // 이미지만 저장한 리뷰(content가 비어있는 것)는 제외
+        return reviewRepository.findByMenuId(menuId)
+                .stream()
+                .filter(r -> r.getContent() != null && !r.getContent().trim().isEmpty())
+                .count();
     }
 }

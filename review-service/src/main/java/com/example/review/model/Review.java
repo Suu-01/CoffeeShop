@@ -26,6 +26,10 @@ public class Review {
 
     private int rating; // ⭐ 별점 (1~5)
 
+     // 추가: 이미지 데이터
+    @Column(columnDefinition = "LONGTEXT")
+    private String imageData;
+
     // 리뷰 작성 실시간 시간 표시
     @CreationTimestamp
     private LocalDateTime createdAt;

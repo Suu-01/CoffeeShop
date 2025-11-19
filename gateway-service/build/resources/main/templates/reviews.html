@@ -95,8 +95,32 @@
     <div id="menu-detail" class="card shadow-sm" style="display:none;">
         <div class="card-body">
             <button class="btn btn-outline-secondary mb-3" onclick="goBack()">뒤로 가기</button>
+            
+            <!-- 어드민용 이미지 추가 버튼 (오른쪽 상단) -->
+            <div style="position: relative; margin-bottom: 20px;">
+                <button id="adminImageBtn" class="btn btn-warning btn-sm" 
+                        style="position: absolute; top: 0; right: 0; display:none;"
+                        onclick="document.getElementById('imageUploadInput').click()">
+                    📸 사진 추가
+                </button>
+                <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" 
+                       onchange="uploadMenuImage()">
+            </div>
+            
+            <!-- 메뉴 사진 표시 -->
+            <div id="detail-image-container" style="text-align: center; margin-bottom: 20px;">
+                <img id="detail-image" src="" alt="메뉴 사진" style="max-width: 100%; height: auto; display:none; border-radius: 10px;">
+            </div>
+            
             <h4 id="detail-name"></h4>
             <p id="detail-desc" class="text-muted"></p>
+            
+            <!-- 어드민용 이미지 삭제 버튼 -->
+            <button id="adminDeleteImageBtn" class="btn btn-danger btn-sm" 
+                    style="display:none; margin-top: 10px;"
+                    onclick="deleteMenuImage()">
+                🗑️ 사진 삭제
+            </button>
         </div>
     </div>
 </div>
@@ -133,6 +157,10 @@
 
     const MENU_API = "http://localhost:8000/api/menus";
     const REVIEW_API = "http://localhost:8000/api/reviews";
+    
+    // 전역 변수 (DOMContentLoaded 밖에 선언)
+    let currentMenuId = null;
+    let currentReviewId = null;
 
     document.addEventListener("DOMContentLoaded", async () => {
         checkLoginStatus(); // 추가하기 107줄 함수
@@ -184,7 +212,7 @@
       </div>
     `;
 
-            // 상품명 클릭 시 상세 페이지 표시
+            // 상품명 클릭 이벤트 핸들러 추가
             const menuName = item.querySelector(`#menu-name-${m.id}`);
             if (menuName) {
                 menuName.addEventListener("click", async () => {
@@ -213,17 +241,91 @@
         }
     });
 
-    // 상품 상세보기 (제목 + 설명 , 이미지 없음) showMenuDeatail 만드는 것
+    // 상품 상세보기 (DOMContentLoaded 밖에 정의)
     async function showMenuDetail(menuId) {
+        currentMenuId = menuId;
+    
         const res = await fetch(`${MENU_API}/${menuId}`);
         const menu = await res.json();
 
-        const menuDetail = document.getElementById("menu-detail");
         document.getElementById("detail-name").innerText = menu.name;
         document.getElementById("detail-desc").innerText = menu.description;
+        
+        // 이미지 가져오기
+        try {
+            const imageRes = await fetch(`${REVIEW_API}/menu/${menuId}/image`);
+            if (imageRes.ok) {
+                const review = await imageRes.json();
+                currentReviewId = review.id;
+                document.getElementById("detail-image").src = review.imageData;
+                document.getElementById("detail-image").style.display = "block";
+            } else {
+                currentReviewId = null;
+                document.getElementById("detail-image").style.display = "none";
+            }
+        } catch (error) {
+            console.error('이미지 조회 실패:', error);
+            currentReviewId = null;
+            document.getElementById("detail-image").style.display = "none";
+        }
+    
+        // 어드민 버튼
+        const isAdmin = localStorage.getItem('role') === 'ADMIN';
+        document.getElementById('adminImageBtn').style.display = isAdmin ? 'block' : 'none';
+        document.getElementById('adminDeleteImageBtn').style.display = (isAdmin && currentReviewId) ? 'block' : 'none';
 
-        menuDetail.style.display = "block";
-        document.getElementById("menu-list").style.display = "none"; // 상품 목록 숨기기
+        document.getElementById("menu-detail").style.display = "block";
+        document.getElementById("menu-list").style.display = "none";
+    }
+
+    // 이미지 업로드 (DOMContentLoaded 밖에 정의)
+    async function uploadMenuImage() {
+        const file = document.getElementById('imageUploadInput').files[0];
+        if (!file || !currentMenuId) {
+            alert("파일을 선택해주세요.");
+            return;
+        }
+    
+        // 이미지 저장용 리뷰가 없으면 생성 (하지만 리뷰 목록에는 안 보임)
+        if (!currentReviewId) {
+            try {
+                const newReview = await fetch(REVIEW_API, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({menuId: currentMenuId, content: "", rating: 0})
+                }).then(r => r.json());
+                currentReviewId = newReview.id;
+            } catch (error) {
+                alert("리뷰 생성 실패!");
+                return;
+            }
+        }
+    
+        const formData = new FormData();
+        formData.append('file', file);
+    
+        const response = await fetch(`${REVIEW_API}/${currentReviewId}/image`, {
+            method: 'POST',
+            body: formData
+        });
+    
+        if (response.ok) {
+            alert("사진 업로드됨!");
+            await showMenuDetail(currentMenuId);
+        } else {
+            alert("사진 업로드 실패!");
+        }
+        document.getElementById('imageUploadInput').value = '';
+    }
+
+    // 이미지 삭제 (DOMContentLoaded 밖에 정의)
+    async function deleteMenuImage() {
+        if (!confirm("삭제?")) return;
+        await fetch(`${REVIEW_API}/${currentReviewId}/image`, {method: 'DELETE'});
+        alert("삭제됨!");
+        await showMenuDetail(currentMenuId);
+        document.getElementById('adminImageBtn').style.display = 'block';
+        document.getElementById('adminDeleteImageBtn').style.display = 'none';
     }
 
     // 뒤로가기 버튼 클릭 시
